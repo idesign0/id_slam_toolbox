@@ -84,7 +84,16 @@ set(libraries
 find_package(PkgConfig REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(CHOLMOD REQUIRED)
-find_package(CSparse REQUIRED)
+if(APPLE)
+  # Manually specify CSparse paths for macOS (Apple)
+  set(CSPARSE_INCLUDE_DIR "/opt/homebrew/include")
+  set(CSPARSE_LIBRARY "/opt/homebrew/lib/libcsparse.dylib")
+  include_directories(${CSPARSE_INCLUDE_DIR})
+else()
+  # Use system-wide or CMake-provided CSparse on other platforms
+  find_package(CSparse REQUIRED)
+endif()
+
 find_package(G2O REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
@@ -122,6 +131,7 @@ qt5_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 add_library(SlamToolboxPlugin SHARED
   rviz_plugin/slam_toolbox_rviz_plugin.cpp
   ${MOC_FILES})
+ament_target_dependencies(SlamToolboxPlugin PUBLIC tf2_sensor_msgs)
 target_link_libraries(SlamToolboxPlugin PUBLIC
   ${bond_TARGETS}
   ${builtin_interfaces_TARGETS}
@@ -147,7 +157,6 @@ target_link_libraries(SlamToolboxPlugin PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::static_transform_broadcaster_node
   tf2_ros::tf2_ros
-  tf2_sensor_msgs::tf2_sensor_msgs
 )
 target_include_directories(SlamToolboxPlugin PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS}
@@ -162,6 +171,7 @@ pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml)
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
+ament_target_dependencies(ceres_solver_plugin PUBLIC tf2_sensor_msgs)
 target_link_libraries(ceres_solver_plugin PUBLIC
   ${bond_TARGETS}
   ${builtin_interfaces_TARGETS}
@@ -187,7 +197,6 @@ target_link_libraries(ceres_solver_plugin PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::static_transform_broadcaster_node
   tf2_ros::tf2_ros
-  tf2_sensor_msgs::tf2_sensor_msgs
 )
 target_link_libraries(ceres_solver_plugin PUBLIC ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
@@ -199,6 +208,7 @@ pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
 
 #### Tool lib for mapping
 add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
+ament_target_dependencies(toolbox_common PUBLIC tf2_sensor_msgs)
 target_link_libraries(toolbox_common PUBLIC
   ${bond_TARGETS}
   ${builtin_interfaces_TARGETS}
@@ -224,7 +234,6 @@ target_link_libraries(toolbox_common PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::static_transform_broadcaster_node
   tf2_ros::tf2_ros
-  tf2_sensor_msgs::tf2_sensor_msgs
 )
 target_link_libraries(toolbox_common PUBLIC kartoSlamToolbox ${Boost_LIBRARIES})
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
